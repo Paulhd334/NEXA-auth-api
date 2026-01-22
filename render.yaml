@@ -1,0 +1,24 @@
+services:
+  # Service Web principal
+  - type: web
+    name: nexa-auth-api
+    env: node
+    region: frankfurt  # ou usa, singapore, etc.
+    plan: free  # ou starter, professional
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: API_KEY
+        generateValue: true  # Render génère une clé automatiquement
+      - key: ADMIN_KEY
+        generateValue: true  # Render génère une clé automatiquement
+    healthCheckPath: /api/health
+    autoDeploy: true
+    disk:
+      name: data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1

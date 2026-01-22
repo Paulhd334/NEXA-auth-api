@@ -1,0 +1,25 @@
+[
+  {
+    "uid": "example-user-123",
+    "email": "test@example.com",
+    "displayName": "Test User",
+    "photoURL": "https://example.com/avatar.jpg",
+    "createdAt": "2024-01-15T10:00:00Z",
+    "lastLogin": "2024-01-15T12:30:00Z",
+    "status": "active",
+    "provider": "google",
+    "tokens": {
+      "hasAccessToken": true,
+      "hasIdToken": true
+    },
+    "metadata": {
+      "unrealEngineVersion": "5.3",
+      "platform": "web",
+      "widgetConnected": true
+    },
+    "widgetData": {
+      "lastSync": "2024-01-15T12:30:00Z",
+      "status": "connected"
+    }
+  }
+]
