@@ -24,116 +24,141 @@ app.use('/api/auth', authRoutes);
 app.use('/api/widget', widgetRoutes);
 app.use('/api/users', usersRoutes);
 
-// ROUTE ASCENSEUR DIRECTE (ajoutée ici)
+// ROUTE ASCENSEUR DIRECTE - VERSION CORRIGÉE
 app.get('/api/elevator', (req, res) => {
-    const { 
-        floor = -1, 
-        action = 'descend', 
-        timestamp, 
-        user = 'ascenseur_interface', 
-        status = 'moving',
-        device = 'elevator_panel'
-    } = req.query;
+    try {
+        const { 
+            floor = '-1', 
+            action = 'descend', 
+            timestamp, 
+            user = 'ascenseur_interface', 
+            status = 'moving',
+            device = 'elevator_panel'
+        } = req.query;
 
-    // Log dans la console serveur
-    console.log('🛗 [ASCENSEUR] Action reçue:', {
-        floor: parseInt(floor),
-        action,
-        timestamp: timestamp ? new Date(parseInt(timestamp)).toISOString() : new Date().toISOString(),
-        user,
-        status,
-        device,
-        ip: req.ip,
-        userAgent: req.get('User-Agent'),
-        receivedAt: new Date().toISOString()
-    });
+        // Convertir le timestamp
+        const receivedTimestamp = timestamp ? 
+            new Date(parseInt(timestamp, 10)).toISOString() : 
+            new Date().toISOString();
 
-    // Réponse JSON
-    res.json({
-        success: true,
-        message: 'Action ascenseur enregistrée',
-        data: {
-            floor: parseInt(floor),
+        // Log dans la console serveur
+        console.log('🛗 [ASCENSEUR] Action reçue:', {
+            floor: parseInt(floor, 10),
             action,
-            timestamp: new Date(),
-            nextAction: 'processing',
-            estimatedTime: '5s'
-        },
-        metadata: {
-            apiVersion: '1.0.0',
-            service: 'NEXA Auth API - Elevator Module'
-        }
-    });
+            timestamp: receivedTimestamp,
+            user,
+            status,
+            device,
+            ip: req.ip || req.connection.remoteAddress,
+            userAgent: req.get('User-Agent') || 'Unknown',
+            receivedAt: new Date().toISOString()
+        });
+
+        // Réponse JSON
+        res.json({
+            success: true,
+            message: 'Action ascenseur enregistrée',
+            data: {
+                floor: parseInt(floor, 10),
+                action,
+                timestamp: new Date(),
+                nextAction: 'processing',
+                estimatedTime: '5s'
+            },
+            metadata: {
+                apiVersion: '1.0.0',
+                service: 'NEXA Auth API - Elevator Module',
+                timestamp: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('❌ Erreur dans /api/elevator:', error);
+        res.status(400).json({
+            success: false,
+            error: 'Données invalides',
+            message: error.message
+        });
+    }
 });
 
 // Route POST pour ascenseur (alternative)
 app.post('/api/elevator', (req, res) => {
-    const elevatorData = req.body;
+    try {
+        const elevatorData = req.body;
 
-    console.log('🛗 [ASCENSEUR] Données POST reçues:', {
-        ...elevatorData,
-        ip: req.ip,
-        receivedAt: new Date().toISOString()
-    });
+        console.log('🛗 [ASCENSEUR] Données POST reçues:', {
+            ...elevatorData,
+            ip: req.ip || req.connection.remoteAddress,
+            receivedAt: new Date().toISOString()
+        });
 
-    res.json({
-        success: true,
-        message: 'Données ascenseur reçues',
-        data: elevatorData,
-        processedAt: new Date().toISOString()
-    });
+        res.json({
+            success: true,
+            message: 'Données ascenseur reçues',
+            data: elevatorData,
+            processedAt: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('❌ Erreur dans POST /api/elevator:', error);
+        res.status(400).json({
+            success: false,
+            error: 'Données invalides'
+        });
+    }
 });
 
 // Route santé
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    service: 'NEXA Auth API',
-    version: '1.0.0',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    endpoints: ['auth', 'widget', 'users', 'elevator', 'health']
-  });
+    res.json({
+        status: 'OK',
+        service: 'NEXA Auth API',
+        version: '1.0.0',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        endpoints: ['auth', 'widget', 'users', 'elevator', 'health']
+    });
 });
 
 // Route racine (mise à jour)
 app.get('/', (req, res) => {
-  res.json({
-    message: 'NEXA Authentication API for Unreal Engine 5',
-    endpoints: {
-      auth: '/api/auth',
-      widget: '/api/widget',
-      users: '/api/users',
-      elevator: '/api/elevator', // ← NOUVEAU
-      health: '/api/health'
-    },
-    documentation: 'https://docs.nexa-auth.com'
-  });
+    res.json({
+        message: 'NEXA Authentication API for Unreal Engine 5',
+        endpoints: {
+            auth: '/api/auth',
+            widget: '/api/widget',
+            users: '/api/users',
+            elevator: '/api/elevator',
+            health: '/api/health'
+        },
+        documentation: 'https://docs.nexa-auth.com',
+        version: '1.0.0'
+    });
 });
 
 // Gestion des erreurs 404
 app.use((req, res) => {
-  res.status(404).json({
-    error: 'Route non trouvée',
-    path: req.path,
-    method: req.method,
-    availableEndpoints: ['/api/auth', '/api/widget', '/api/users', '/api/elevator', '/api/health']
-  });
+    res.status(404).json({
+        error: 'Route non trouvée',
+        path: req.path,
+        method: req.method,
+        availableEndpoints: ['/api/auth', '/api/widget', '/api/users', '/api/elevator', '/api/health']
+    });
 });
 
 // Gestion des erreurs globales
 app.use((err, req, res, next) => {
-  console.error('❌ Erreur serveur:', err);
-  res.status(500).json({
-    error: 'Erreur interne du serveur',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Une erreur est survenue'
-  });
+    console.error('❌ Erreur serveur:', err);
+    res.status(500).json({
+        error: 'Erreur interne du serveur',
+        message: process.env.NODE_ENV === 'development' ? err.message : 'Une erreur est survenue',
+        timestamp: new Date().toISOString()
+    });
 });
 
 // Démarrer le serveur
 app.listen(PORT, () => {
-  console.log(`🚀 Serveur NEXA Auth API démarré sur le port ${PORT}`);
-  console.log(`🌍 Environnement: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 URL: http://localhost:${PORT}`);
-  console.log(`🛗 Route ascenseur: http://localhost:${PORT}/api/elevator`);
+    console.log(`🚀 Serveur NEXA Auth API démarré sur le port ${PORT}`);
+    console.log(`🌍 Environnement: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔗 URL: http://localhost:${PORT}`);
+    console.log(`🛗 Route ascenseur: http://localhost:${PORT}/api/elevator`);
 });
